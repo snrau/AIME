@@ -1,0 +1,24 @@
+@import './base.css';
+@import './classes.css';
+
+@import url('https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap');
+
+html,
+body,
+#app {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: 'Roboto', Arial, sans-serif;
+}
+
+body {
+  background-color: #6c7686;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: inherit;
+}

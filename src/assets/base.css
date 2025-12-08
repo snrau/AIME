@@ -1,0 +1,7 @@
+/* init CSS variables here*/
+:root {
+  --border-color: #dcd9d9; /* Light gray border */
+  --component-bg-color: #edecec; /* Very light gray for components */
+  --header-bg-color: #5c677a; /* Pure white for header */
+  --popup-color: #8794ac;
+}
