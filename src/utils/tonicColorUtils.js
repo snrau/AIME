@@ -83,10 +83,10 @@ function hexToRgb(hex) {
   const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
   return result
     ? {
-        r: parseInt(result[1], 16),
-        g: parseInt(result[2], 16),
-        b: parseInt(result[3], 16),
-      }
+      r: parseInt(result[1], 16),
+      g: parseInt(result[2], 16),
+      b: parseInt(result[3], 16),
+    }
     : null;
 }
 
@@ -144,7 +144,16 @@ function interpolateColorPalette(value) {
     { position: 1, color: '#B8D4F1' },
   ];
 
-  return multiColorInterpolate(value, stops);
+  const viridisStops = [
+    { position: 0, color: '#440154' },
+    { position: 0.25, color: '#39568C' },
+    { position: 0.5, color: '#1F968B' },
+    { position: 0.75, color: '#73D055' },
+    { position: 1, color: '#FDE725' },
+  ];
+
+
+  return multiColorInterpolate(value, viridisStops);
 }
 
 /**

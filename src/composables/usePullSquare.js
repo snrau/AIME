@@ -8,7 +8,7 @@ export function usePullSquare(
   updateSquare,
   isBatchOperation
 ) {
-  const handlePullSquare = async ({ x, y, direction, sequenceData, pullStrength = 3 }) => {
+  const handlePullSquare = async ({ x, y, direction, sequenceData, pullStrength = 0 }) => {
     // Find target square in the specified direction
     let targetSquare = null;
 
@@ -38,6 +38,7 @@ export function usePullSquare(
         if (getSquareAtPosition(x, y - 1)) hasSpaceForPull = false;
         break;
     }
+
 
     if (targetSquare && hasSpaceForPull) {
       // Identify the original source square
@@ -69,6 +70,8 @@ export function usePullSquare(
         { x: targetX, y: targetY },
       ]);
 
+
+
       // Calculate the new positions for source and target squares, for moving them apart in opposite directions
       let newSourceX = sourceX;
       let newSourceY = sourceY;
@@ -82,22 +85,22 @@ export function usePullSquare(
         case 'left':
           // Source moves right, target moves left
           newSourceX = sourceX + moveDistance;
-          newTargetX = targetX - moveDistance;
+          newTargetX = targetX //- moveDistance;
           break;
         case 'right':
           // Source moves left, target moves right
           newSourceX = sourceX - moveDistance;
-          newTargetX = targetX + moveDistance;
+          newTargetX = targetX //+ moveDistance;
           break;
         case 'up':
           // Source moves down, target moves up
           newSourceY = sourceY + moveDistance;
-          newTargetY = targetY - moveDistance;
+          newTargetY = targetY //- moveDistance;
           break;
         case 'down':
           // Source moves up, target moves down
           newSourceY = sourceY - moveDistance;
-          newTargetY = targetY + moveDistance;
+          newTargetY = targetY //+ moveDistance;
           break;
       }
 
@@ -106,6 +109,29 @@ export function usePullSquare(
       newSourceY = Math.max(0, Math.min(rows - 1, newSourceY));
       newTargetX = Math.max(0, Math.min(cols - 1, newTargetX));
       newTargetY = Math.max(0, Math.min(rows - 1, newTargetY));
+
+      const fullrange = (direction === 'right' || direction === 'left') && (newSourceX === 0 || newSourceX === cols - 1) || (direction === 'up' || direction === 'down') && (newSourceY === 0 || newSourceY === rows - 1)
+
+      if (fullrange) {
+        switch (direction) {
+          case 'left':
+            // Source moves right, target moves left
+            newTargetX = 0
+            break;
+          case 'right':
+            // Source moves left, target moves right
+            newTargetX = cols - 1;
+            break;
+          case 'up':
+            // Source moves down, target moves up
+            newTargetY = 0
+            break;
+          case 'down':
+            // Source moves up, target moves down
+            newTargetY = rows - 1;
+            break;
+        }
+      }
 
       // Place source and target squares at their new positions with their corresponding sequence data
       placeSquare(newSourceX, newSourceY, sequenceData);
@@ -224,7 +250,9 @@ export function usePullSquare(
       // Calculate new position based on direction, mirrored
       let newX = x;
       let newY = y;
-      const moveDistance = pullStrength || 3;
+      const moveDistance = pullStrength || 0;
+
+      console.log('Pulling single square:', x, y, direction, moveDistance);
 
       switch (direction) {
         case 'left':

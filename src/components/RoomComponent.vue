@@ -10,6 +10,7 @@ import { useFirstSquareLogic } from '@/composables/useFirstSquareLogic';
 import { useGridHistoryStore } from '@/stores/gridHistory';
 import * as mm from '@magenta/music';
 import { useModeStore } from '../stores/mode.js';
+import { useMidiPlayer } from '../stores/midioutput.js'
 
 // Use responsive grid configuration
 const {
@@ -36,9 +37,12 @@ const justCompletedBatch = ref(false);
 
 const modeStore = useModeStore();
 
+const outputname = useMidiPlayer()
+
 // reactive state for pull highlighting
 const pullDirection = ref(null);
 const pullPosition = ref(null);
+const pullTarget = ref(null);
 
 // Local loading state for immediate feedback
 const localFormationLoading = ref(false);
@@ -86,28 +90,47 @@ const { handlePullSquare } = usePullSquare(
 
 // Computed property to get highlighted cell positions
 const highlightedCells = computed(() => {
-  if (!pullDirection.value || !pullPosition.value) return new Set();
+  if (!pullDirection.value || !pullPosition.value || !pullTarget.value) return new Set();
   const { x, y } = pullPosition.value;
+  const targetx = pullTarget.value.x;
+  const targety = pullTarget.value.y;
+  const dist = pullDirection.value === 'right' || pullDirection.value === 'left' ? Math.abs(x - targetx):Math.abs(y - targety)
+  const fullrange = (pullDirection.value === 'right' || pullDirection.value === 'left') && (targetx === 0 || targetx === cols.value-1) || (pullDirection.value === 'up' || pullDirection.value === 'down') && (targety === 0 || targety === rows.value-1)
+  const interpolate = checkIfInterpolate({x:x,y:y,direction:pullDirection.value})
   const cells = new Set();
-  if (pullDirection.value === 'right') {
-    for (let col = 0; col < x; col++) {
+  if(!interpolate){
+    cells.add(`${targety}-${targetx}`);
+    return cells
+  }
+  if (fullrange && (pullDirection.value === 'right' || pullDirection.value === 'left')){
+    for (let col = 0; col < cols.value; col++) {
+      cells.add(`${y}-${col}`);
+    }
+  } else if (fullrange && (pullDirection.value === 'up' || pullDirection.value === 'down')){
+    for (let row = 0; row < rows.value; row++) {
+      cells.add(`${row}-${x}`);
+    }
+  }else if (pullDirection.value === 'right') {
+    for (let col = x-dist; col < x; col++) {
       cells.add(`${y}-${col}`);
     }
   } else if (pullDirection.value === 'left') {
-    for (let col = x + 1; col < cols.value; col++) {
+    for (let col = x + 1; col < x+1+dist; col++) {
       cells.add(`${y}-${col}`);
     }
   } else if (pullDirection.value === 'down') {
-    for (let row = 0; row < y; row++) {
+    for (let row = y-dist; row < y; row++) {
       cells.add(`${row}-${x}`);
     }
   } else if (pullDirection.value === 'up') {
-    for (let row = y + 1; row < rows.value; row++) {
+    for (let row = y + 1; row < y+1+dist; row++) {
       cells.add(`${row}-${x}`);
     }
   }
   return cells;
 });
+
+
 
 // Wrapper for handlePullSquare to set highlighting
 const handlePullSquareWithHighlight = async (eventData) => {
@@ -141,6 +164,8 @@ const handlePullSquareWithHighlight = async (eventData) => {
 
   // Only show loading if there's actually going to be interpolation
   const willInterpolate = targetSquare && hasSpaceForPull;
+
+  console.log(willInterpolate, targetSquare, hasSpaceForPull, "willInterpolate")
 
   if (willInterpolate) {
     isPullLoading.value = true;
@@ -176,11 +201,13 @@ const handlePullSquareWithHighlight = async (eventData) => {
 const handlePullPreview = (eventData) => {
   pullDirection.value = eventData.direction;
   pullPosition.value = { x: eventData.x, y: eventData.y };
+  pullTarget.value = eventData.target
 };
 
 const handlePullEnd = () => {
   pullDirection.value = null;
   pullPosition.value = null;
+  pullTarget.value = null
 };
 
 // Wrapper for handleFormationButtonClick to manage batch operations
@@ -442,6 +469,34 @@ function copyToSquare(x, y, sequenceData) {
   if (targetSquare) {
     updateSquare(x, y, JSON.parse(JSON.stringify(sequenceData)));
   }
+}
+
+function checkIfInterpolate(eventData){
+  let targetSquare = null
+  let hasSpaceForPull = true;
+  const {x,y,direction} = eventData
+  
+  switch (direction) {
+    case 'left':
+      targetSquare = getSquareAtPosition(x - 1, y);
+      if (getSquareAtPosition(x + 1, y)) hasSpaceForPull = false;
+      break;
+    case 'right':
+      targetSquare = getSquareAtPosition(x + 1, y);
+      if (getSquareAtPosition(x - 1, y)) hasSpaceForPull = false;
+      break;
+    case 'up':
+      targetSquare = getSquareAtPosition(x, y - 1);
+      if (getSquareAtPosition(x, y + 1)) hasSpaceForPull = false;
+      break;
+    case 'down':
+      targetSquare = getSquareAtPosition(x, y + 1);
+      if (getSquareAtPosition(x, y - 1)) hasSpaceForPull = false;
+      break;
+  }
+
+  // Only show loading if there's actually going to be interpolation
+  return targetSquare && hasSpaceForPull;
 }
 
 function handleSequenceUpdated(eventData) {

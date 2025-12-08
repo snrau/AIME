@@ -1,6 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as mm from '@magenta/music';
+import { useMidiPlayer } from '../stores/midioutput.js'
 
 // Piano Roll layout
 const numSteps = 64;
@@ -9,6 +10,8 @@ const numPitches = 30;
 
 // Highest MIDI note for the grid (F6)
 const highestMidiNote = 89;
+
+const outputname = useMidiPlayer()
 
 const props = defineProps({
   sequenceData: {
@@ -112,13 +115,25 @@ const pitches = Array.from({ length: numPitches }, (_, i) => {
 });
 
 async function initPlayer() {
-  if (player) return player;
+  if (player && player.outputs[0].name === outputname.output) return player;
+
+  /*
+  if(outputname.output === "default"){
+    player = new mm.Player();
+    console.log('Using Magenta Audio Player.', player);
+    player.outputs = [{name:'default'}]
+    return player;
+  }
+  */
 
   // Check WebMIDI support
   if (navigator.requestMIDIAccess) {
     try {
       const midiAccess = await navigator.requestMIDIAccess();
       const outputs = Array.from(midiAccess.outputs.values());
+
+      // find the output in array where name is equal to outputname.output
+      //use that for player
 
       // If MIDI output possible use it
       if (outputs.length > 0) {

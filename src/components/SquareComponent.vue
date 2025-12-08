@@ -86,7 +86,7 @@ function onMouseDown(event) {
   startDragPosition.value = { x: event.clientX, y: event.clientY };
   currentDragDirection = null;
 
-  emit('pull-preview', { direction: null, x: props.x, y: props.y });
+  emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y}});
 
   // Visibility of ghost square
   ghostVisible.value = true;
@@ -113,7 +113,7 @@ function onTouchStart(event) {
   startDragPosition.value = { x: touch.clientX, y: touch.clientY };
   currentDragDirection = null;
 
-  emit('pull-preview', { direction: null, x: props.x, y: props.y });
+  emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
 
   // Visibility of ghost square
   ghostVisible.value = true;
@@ -144,13 +144,18 @@ function onMouseMove(event) {
   // Check if we have moved beyond the threshold
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+  const target = findClosestCell(event)
+
   if (distance > dragThreshold) {
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       currentDragDirection = deltaX > 0 ? 'left' : 'right';
     } else {
       currentDragDirection = deltaY > 0 ? 'up' : 'down';
     }
-    emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y });
+    emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y, target:target });
+  }else{
+    currentDragDirection = null
+    emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
   }
 }
 
@@ -167,17 +172,98 @@ function onTouchMove(event) {
   // Check if we have moved beyond the threshold
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
+  const target = findClosestCell(touch)
+
   if (distance > dragThreshold) {
     if (Math.abs(deltaX) > Math.abs(deltaY)) {
       currentDragDirection = deltaX > 0 ? 'left' : 'right';
     } else {
       currentDragDirection = deltaY > 0 ? 'up' : 'down';
     }
-    emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y });
+    emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y, target:target });
+  } else{
+    currentDragDirection = null
+    emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
   }
 
   // Prevent default to avoid scrolling
   event.preventDefault();
+}
+
+function findClosestCell(event){
+  if (!isDragging.value) return;
+
+  let didCopy = false;
+
+  // Check if above grid container
+  const node = document.elementFromPoint(event.clientX, event.clientY);
+  const container = node ? node.closest('[data-component]') : null;
+
+  if (container && modeStore.isCopyMode) {
+    let targetX, targetY;
+
+    // Try to find a square element first
+    const targetElement = node ? node.closest('.square') : null;
+
+    if (targetElement) {
+      // If we found a square, use its coordinates
+      targetX = parseInt(targetElement.dataset.x, 10);
+      targetY = parseInt(targetElement.dataset.y, 10);
+    } else {
+      // find the grid container and calculate position
+      const gridContainer = container.querySelector('.grid-container') || container;
+
+      if (gridContainer) {
+        const gridRect = gridContainer.getBoundingClientRect();
+
+        // Mouse position relative to grid container
+        const mouseX = event.clientX - gridRect.left;
+        const mouseY = event.clientY - gridRect.top;
+
+        // Find the first grid cell to determine actual cell dimensions
+        const firstCell = gridContainer.querySelector('.grid-cell, .square-cell');
+        if (firstCell) {
+          const cellRect = firstCell.getBoundingClientRect();
+          const actualCellWidth = cellRect.width;
+          const actualCellHeight = cellRect.height;
+
+          // Calculate grid coordinates by dividing mouse position by actual cell size
+          targetX = Math.floor(mouseX / actualCellWidth);
+          targetY = Math.floor(mouseY / actualCellHeight);
+
+          // Get grid bounds
+          const componentType = container.dataset.component;
+          let maxCols, maxRows;
+
+          if (componentType === 'room') {
+            maxCols = 11;
+            maxRows = 7;
+          } else if (componentType === 'melody') {
+            maxCols = 13;
+            maxRows = 1;
+          } else if (componentType === 'buffer1' || componentType === 'buffer2') {
+            maxCols = 1;
+            maxRows = 5;
+          } else {
+            // Count cells from DOM
+            const allRows = gridContainer.querySelectorAll('.grid-row, .room-row');
+            maxRows = allRows.length;
+            if (allRows.length > 0) {
+              maxCols = allRows[0].querySelectorAll('.grid-cell, .square-cell').length;
+            } else {
+              maxCols = 1;
+            }
+          }
+
+          // Clamp to grid bounds
+          targetX = Math.max(0, Math.min(maxCols - 1, targetX));
+          targetY = Math.max(0, Math.min(maxRows - 1, targetY));
+        }
+      }
+    }
+    return {x: targetX, y:targetY}
+  }
+  return {x: 0, y:0}
 }
 
 function onMouseUp(event) {
@@ -297,7 +383,7 @@ function onMouseUp(event) {
     }
 
     // Round to nearest integer and ensure it's at least 1, max 5
-    const pullStrength = Math.min(5, Math.max(1, Math.round(gridCellsDragged)));
+    const pullStrength = Math.min(5, Math.max(0, Math.round(gridCellsDragged)));
 
     emit('pull-square', {
       x: props.x,
@@ -449,7 +535,7 @@ function onTouchEnd(event) {
     }
 
     // Round to nearest integer and ensure it's at least 1, max 5
-    const pullStrength = Math.min(5, Math.max(1, Math.round(gridCellsDragged)));
+    const pullStrength = Math.min(5, Math.max(0, Math.round(gridCellsDragged)));
 
     emit('pull-square', {
       x: props.x,
