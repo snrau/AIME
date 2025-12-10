@@ -2,6 +2,7 @@
 import { RouterView } from 'vue-router';
 import PopupModal from '@/components/PopupModal.vue';
 import CircleOfFifths from '@/components/CircleOfFifths.vue';
+import Midioutput from '@/components/MidiOutput.vue';
 import RoomSelection from '@/components/RoomSelection.vue';
 import { provide, ref } from 'vue';
 import { useRoomStore } from '@/stores/roomStore';
@@ -43,6 +44,9 @@ provide('setLoadRoomCallback', (callback) => {
   </PopupModal>
   <PopupModal type="tonicKey" title="Select Tonic Key">
     <CircleOfFifths />
+  </PopupModal>
+  <PopupModal type="output" title="Select Midioutput">
+    <Midioutput />
   </PopupModal>
   <PopupModal type="help" title="Help">
     <HelpComponent />

@@ -1,19 +1,23 @@
 <script setup>
 import { usePopupStore } from '@/stores/popupStore';
 import { useTonicKeyStore } from '@/stores/tonicKey';
+import { useMidiPlayer } from '@/stores/midioutput';
 import { computed } from 'vue';
 
 const store = usePopupStore();
 const tonicKeyStore = useTonicKeyStore();
+const midioutput = useMidiPlayer();
 
 const emit = defineEmits(['save-room']);
 
 const openRooms = () => store.openPopup('rooms');
 const openTonicKey = () => store.openPopup('tonicKey');
+const openOutput = () => store.openPopup('output');
 const openHelp = () => store.openPopup('help');
 const saveRoom = () => emit('save-room');
 
 const currentTonicKey = computed(() => tonicKeyStore.tonicKey);
+const currentOutput = computed(() => midioutput.output);
 </script>
 
 <template>
@@ -25,6 +29,9 @@ const currentTonicKey = computed(() => tonicKeyStore.tonicKey);
       <button class="btn" @click="openRooms">Rooms</button>
       <button class="btn tonic-key-btn" @click="openTonicKey">
         Tonic Key: {{ currentTonicKey }}
+      </button>
+      <button class="btn output-btn" @click="openOutput">
+        Output: {{ currentOutput }}
       </button>
     </div>
     <div class="settings-btn-container">

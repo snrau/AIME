@@ -802,8 +802,15 @@ async function playSelectedSquares() {
 
 let player = null;
 async function initPlayer() {
-  if (player) return player;
+  if (player && player.outputs[0].name === outputname.output) return player;
 
+
+  if(outputname.output === "default"){
+    player = new mm.Player();
+    console.log('Using Magenta Audio Player.', player);
+    player.outputs = [{name:'default'}]
+    return player;
+  }
   // Check WebMIDI support
   if (navigator.requestMIDIAccess) {
     try {
@@ -812,12 +819,18 @@ async function initPlayer() {
 
       // If MIDI output possible use it
       if (outputs.length > 0) {
-        const output = outputs[0];
-        const midiPlayer = new mm.MIDIPlayer();
-        midiPlayer.outputs = [output];
-        player = midiPlayer;
+        const output = outputs.find(o => o.name === outputname.output);
+        // If a valid MIDI output is found, use it
+        if (output) {
+          const midiPlayer = new mm.MIDIPlayer();
+          midiPlayer.outputs = [output];
+          player = midiPlayer;
 
-        console.log('Using MIDI output:', output.name);
+          console.log('Using MIDI output:', output.name);
+        } else {
+          console.warn('Specified MIDI output not found: using AudioPlayer instead.');
+          player = new mm.Player(); // Fallback to AudioPlayer
+        }
         return player;
       } else {
         console.warn('No MIDI outputs found: using AudioPlayer instead.');
