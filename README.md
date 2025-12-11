@@ -4,6 +4,10 @@
 
 The application is optimized for desktop and tablet devices (iPad), offering touch-friendly controls and responsive design for creative music exploration on multiple platforms.
 
+## Hosted and online version
+
+https://snrau.github.io/AIME/#/
+
 ## Getting Started
 
 ### Desktop
