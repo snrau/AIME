@@ -1,7 +1,7 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as mm from '@magenta/music';
-import { useMidiPlayer } from '../stores/midioutput.js'
+import { useMidiPlayer } from '../stores/midioutput.js';
 
 // Piano Roll layout
 const numSteps = 64;
@@ -9,9 +9,9 @@ const numSteps = 64;
 const numPitches = 30;
 
 // Highest MIDI note for the grid (F6)
-const highestMidiNote = 89;
+const highestMidiNote = 77;
 
-const outputname = useMidiPlayer()
+const outputname = useMidiPlayer();
 
 const props = defineProps({
   sequenceData: {
@@ -26,6 +26,12 @@ const isTouchDevice = ref(false);
 const currentDragGroupId = ref(null);
 const activeButton = ref(null);
 const loadingButton = ref(null);
+const fileInput = ref(null);
+
+// Trigger the hidden file input
+const triggerFileInput = () => {
+  fileInput.value.click();
+};
 
 const emit = defineEmits(['close', 'sequence-generated']);
 
@@ -58,6 +64,52 @@ onUnmounted(() => {
     console.warn('Error stopping player during cleanup:', error);
   }
 });
+
+// check if work and how to get melody to the store
+async function processMidiFile(midiData) {
+  // Parse the MIDI file
+  const sequence = mm.midiToSequenceProto(midiData);
+  sequence.tempos = [{ qpm: 120 }];
+
+  const stepsPerQuarter = 4; // 16th notes
+  const quantizedSequence = mm.sequences.quantizeNoteSequence(sequence, stepsPerQuarter);
+
+  // Clear the grid
+  grid.value = grid.value.map((row) => row.map(() => ({ active: false, groupId: null })));
+
+  // Iterate through the notes and map them to the grid
+  let groupId = nextGroupId;
+  quantizedSequence.notes.forEach((note) => {
+    const stepIdx = note.quantizedStartStep; // Quantized step index
+    const pitchIdx = highestMidiNote - note.pitch; // Map pitch to grid row
+
+    if (stepIdx < 64 && pitchIdx >= 0 && pitchIdx < grid.value.length) {
+      for (let i = 0; i < note.quantizedEndStep - note.quantizedStartStep; i++) {
+        if (stepIdx + i < numSteps) {
+          grid.value[pitchIdx][stepIdx + i] = { active: true, groupId };
+        }
+      }
+    }
+    nextGroupId++;
+    groupId = nextGroupId;
+  });
+}
+
+async function importMidiFile(event) {
+  const file = event.target.files[0];
+  if (file) {
+    const midiData = await new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        resolve(e.target.result);
+      };
+      reader.onerror = (err) => reject(err);
+      reader.readAsArrayBuffer(file);
+    });
+
+    await processMidiFile(midiData);
+  }
+}
 
 function initializeGridFromSequence(sequence) {
   try {
@@ -117,14 +169,12 @@ const pitches = Array.from({ length: numPitches }, (_, i) => {
 async function initPlayer() {
   if (player && player.outputs[0].name === outputname.output) return player;
 
-  
-  if(outputname.output === "default"){
+  if (outputname.output === 'default') {
     player = new mm.Player();
     console.log('Using Magenta Audio Player.', player);
-    player.outputs = [{name:'default'}]
+    player.outputs = [{ name: 'default' }];
     return player;
   }
-  
 
   // Check WebMIDI support
   if (navigator.requestMIDIAccess) {
@@ -137,7 +187,7 @@ async function initPlayer() {
 
       // If MIDI output possible use it
       if (outputs.length > 0) {
-        const output = outputs.find(o => o.name === outputname.output);
+        const output = outputs.find((o) => o.name === outputname.output);
         // If a valid MIDI output is found, use it
         if (output) {
           const midiPlayer = new mm.MIDIPlayer();
@@ -525,6 +575,30 @@ function buildSequenceFromGrid() {
       </div>
       <div class="draw-btn-container">
         <div class="draw-play-safe-btn-container">
+          <button
+            @click="triggerFileInput"
+            @touchstart="
+              (e) => {
+                e.preventDefault();
+                handleButtonTouchStart('upload', triggerFileInput);
+              }
+            "
+            @touchend="handleButtonTouchEnd"
+            @touchcancel="handleButtonTouchEnd"
+            :class="{ 'touch-active': activeButton === 'upload' }"
+          >
+            <span class="button-content"> Upload MIDI </span>
+          </button>
+
+          <!-- Hidden File Input -->
+          <input
+            type="file"
+            ref="fileInput"
+            accept=".mid,.midi"
+            style="display: none"
+            @change="importMidiFile"
+          />
+
           <button
             @click="playMidi"
             @touchstart="
