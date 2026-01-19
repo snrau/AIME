@@ -8,6 +8,12 @@ The application is optimized for desktop and tablet devices (iPad), offering tou
 
 https://snrau.github.io/AIME/#/
 
+## Tablet Fullscreen in Chrome
+
+chrome://flags
+
+Disable EdgeToEdgeEverywhere
+
 ## Getting Started
 
 ### Desktop
