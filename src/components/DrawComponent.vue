@@ -6,10 +6,10 @@ import { useMidiPlayer } from '../stores/midioutput.js';
 // Piano Roll layout
 const numSteps = 64;
 // C4 (60) to F6 (89) inclusive: 89 - 60 + 1 = 30 pitches
-const numPitches = 30;
+const numPitches = 25;
 
 // Highest MIDI note for the grid (F6)
-const highestMidiNote = 77;
+const highestMidiNote = 72;
 
 const outputname = useMidiPlayer();
 

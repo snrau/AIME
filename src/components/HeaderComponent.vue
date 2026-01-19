@@ -15,6 +15,15 @@ const openTonicKey = () => store.openPopup('tonicKey');
 const openOutput = () => store.openPopup('output');
 const openHelp = () => store.openPopup('help');
 const saveRoom = () => emit('save-room');
+const fullscreen = () => {
+  if (!document.fullscreenElement) {
+    document.documentElement.requestFullscreen();
+  } else {
+    if (document.exitFullscreen) {
+      document.exitFullscreen();
+    }
+  }
+};
 
 const currentTonicKey = computed(() => tonicKeyStore.tonicKey);
 const currentOutput = computed(() => midioutput.output);
@@ -35,6 +44,9 @@ const currentOutput = computed(() => midioutput.output);
       </button>
     </div>
     <div class="settings-btn-container">
+      <button class="btn" @click="fullscreen">
+        <i class="fas fa-compress"></i>
+      </button>
       <button class="btn" @click="openHelp"><i class="fas fa-question-circle"></i></button>
     </div>
   </div>
