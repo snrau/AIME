@@ -1,3 +1,5 @@
+import { interpolateViridis } from 'd3-scale-chromatic';
+
 // Keys lookup: index to note name
 export const keysLookup = ['C', 'C#', 'D', 'D#', 'E', 'F', 'F#', 'G', 'G#', 'A', 'A#', 'B'];
 
@@ -70,90 +72,18 @@ export function isBright(pitch, baseKey) {
 }
 
 /**
- * Linear interpolation between two values
- */
-function lerp(start, end, t) {
-  return start + (end - start) * t;
-}
-
-/**
- * Parse hex color to RGB object
- */
-function hexToRgb(hex) {
-  const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
-  return result
-    ? {
-      r: parseInt(result[1], 16),
-      g: parseInt(result[2], 16),
-      b: parseInt(result[3], 16),
-    }
-    : null;
-}
-
-/**
- * Convert RGB object to hex color
- */
-function rgbToHex(r, g, b) {
-  return '#' + [r, g, b].map((x) => Math.round(x).toString(16).padStart(2, '0')).join('');
-}
-
-/**
- * Interpolate between two colors
- */
-function interpolateColor(color1, color2, t) {
-  const rgb1 = hexToRgb(color1);
-  const rgb2 = hexToRgb(color2);
-
-  if (!rgb1 || !rgb2) return color1;
-
-  const r = lerp(rgb1.r, rgb2.r, t);
-  const g = lerp(rgb1.g, rgb2.g, t);
-  const b = lerp(rgb1.b, rgb2.b, t);
-
-  return rgbToHex(r, g, b);
-}
-
-/**
- * Interpolate between multiple colors based on a value
- */
-function multiColorInterpolate(value, stops) {
-  if (value <= stops[0].position) return stops[0].color;
-  if (value >= stops[stops.length - 1].position) return stops[stops.length - 1].color;
-
-  for (let i = 0; i < stops.length - 1; i++) {
-    if (value >= stops[i].position && value <= stops[i + 1].position) {
-      const t = (value - stops[i].position) / (stops[i + 1].position - stops[i].position);
-      return interpolateColor(stops[i].color, stops[i + 1].color, t);
-    }
-  }
-
-  return stops[0].color;
-}
-
-/**
- * Interpolate between dark and bright colors
+ * Interpolate between dark and bright colors using D3's Viridis color scheme
+ * with enhanced sensitivity to emphasize tonal differences
  * value: 0 darkest, to 1 brightest
  */
 function interpolateColorPalette(value) {
-  // Define color palette from dark to bright using blue tones
-  const stops = [
-    { position: 0, color: '#0A1929' },
-    { position: 0.25, color: '#1E3A5F' },
-    { position: 0.5, color: '#4A7BA7' },
-    { position: 0.75, color: '#7FA8D1' },
-    { position: 1, color: '#B8D4F1' },
-  ];
+  // Clamp value between 0 and 1
+  const clampedValue = Math.max(0, Math.min(1, value));
 
-  const viridisStops = [
-    { position: 0, color: '#440154' },
-    { position: 0.25, color: '#39568C' },
-    { position: 0.5, color: '#1F968B' },
-    { position: 0.75, color: '#73D055' },
-    { position: 1, color: '#FDE725' },
-  ];
+  const sensitivityFactor = 1.8;
+  const sensitiveValue = Math.pow(clampedValue, sensitivityFactor);
 
-
-  return multiColorInterpolate(value, viridisStops);
+  return interpolateViridis(sensitiveValue);
 }
 
 /**
