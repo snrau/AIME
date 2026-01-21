@@ -409,6 +409,7 @@ async function playMidi() {
     // Stop any currently playing sequence
     if (player.isPlaying()) {
       player.stop();
+      return
     }
 
     // Start playing the sequence

@@ -5,6 +5,7 @@ import * as mm from '@magenta/music';
 import { ref } from 'vue';
 
 import { useResponsiveMelody } from '@/utils/gridUtils';
+import { useMidiPlayer } from '../stores/midioutput.js';
 
 // Use responsive melody configuration
 const {
@@ -16,6 +17,8 @@ const {
   roomContainerWidth,
   roomContainerHeight,
 } = useResponsiveMelody();
+
+const outputname = useMidiPlayer();
 
 // Create a 2D array to represent the grid
 const grid = ref(
@@ -103,8 +106,14 @@ let lastStep = 0;
 const isPlaying = ref(false);
 
 async function initPlayer() {
-  if (player) return player;
+  if (player && player.outputs[0].name === outputname.output) return player;
 
+  if (outputname.output === 'default') {
+    player = new mm.Player();
+    console.log('Using Magenta Audio Player.', player);
+    player.outputs = [{ name: 'default' }];
+    return player;
+  }
   // Check WebMIDI support
   if (navigator.requestMIDIAccess) {
     try {
@@ -113,12 +122,18 @@ async function initPlayer() {
 
       // If MIDI output possible use it
       if (outputs.length > 0) {
-        const output = outputs[0];
-        const midiPlayer = new mm.MIDIPlayer();
-        midiPlayer.outputs = [output];
-        player = midiPlayer;
+        const output = outputs.find((o) => o.name === outputname.output);
+        // If a valid MIDI output is found, use it
+        if (output) {
+          const midiPlayer = new mm.MIDIPlayer();
+          midiPlayer.outputs = [output];
+          player = midiPlayer;
 
-        console.log('Using MIDI output:', output.name);
+          console.log('Using MIDI output:', output.name);
+        } else {
+          console.warn('Specified MIDI output not found: using AudioPlayer instead.');
+          player = new mm.Player(); // Fallback to AudioPlayer
+        }
         return player;
       } else {
         console.warn('No MIDI outputs found: using AudioPlayer instead.');
@@ -135,6 +150,22 @@ async function initPlayer() {
   console.log('Using Magenta Audio Player.');
 
   return player;
+}
+
+async function resetMelody() {
+  if (player.isPlaying()) {
+    player.stop();
+  }
+  isPlaying.value = false;
+
+  // Clear the highlight interval
+  if (highlightInterval) {
+    clearInterval(highlightInterval);
+    highlightInterval = null;
+  }
+  // Reset all square highlighting
+  grid.value.flat().forEach((sq) => (sq.isPlaying = false));
+  lastStep = 0;
 }
 
 async function toggleMelody() {
@@ -173,7 +204,7 @@ async function toggleMelody() {
     if (highlightInterval) {
       clearInterval(highlightInterval);
       highlightInterval = null;
-      
+
     }
     lastStep = currentStep;
     grid.value.flat().forEach((sq) => (sq.isPlaying = false));
@@ -254,6 +285,12 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
       data-component="melody"
       :style="{ width: roomContainerWidth + 'px', height: roomContainerHeight + 'px' }"
     >
+
+      <div class="melody-rewind">
+        <button @click="resetMelody">
+          <i :class="'fas fa-backward'"></i>
+        </button>
+      </div>
       <div class="melody-play">
         <button @click="toggleMelody">
           <i :class="isPlaying ? 'fas fa-pause' : 'fas fa-play'"></i>
@@ -377,6 +414,30 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
     width: 475px !important;
     margin: auto;
   }
+}
+
+.melody-rewind {
+  position: absolute;
+  left: -130px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+
+.melody-rewind button {
+  display: block;
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  border: 2px solid #6c7686;
+}
+
+.melody-rewind button:hover {
+  cursor: pointer;
+  opacity: 0.7;
+}
+
+.melody-rewind button i {
+  color: #6c7686;
 }
 
 .melody-play {
