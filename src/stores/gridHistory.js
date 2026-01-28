@@ -22,7 +22,7 @@ export const useGridHistoryStore = defineStore('gridHistory', () => {
   // Add a new state to history
   function saveState(gridState) {
     // deep clone
-    const clonedGrid = JSON.parse(JSON.stringify(gridState));
+    const clonedGrid = gridState.map((item) => ({ ...item }));
 
     // If we are not at the end of history truncate future states, branch out
     if (currentStep.value < history.value.length - 1) {
@@ -53,7 +53,7 @@ export const useGridHistoryStore = defineStore('gridHistory', () => {
   }
 
   function initializeHistory(initialGrid) {
-    history.value = [JSON.parse(JSON.stringify(initialGrid))];
+    history.value = [initialGrid.map((item) => ({ ...item }))];
     currentStep.value = 0;
   }
 

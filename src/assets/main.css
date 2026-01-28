@@ -10,11 +10,13 @@ body{
   padding: 0;
   box-sizing: border-box;
   font-family: 'Roboto', Arial, sans-serif;
+  overflow:hidden;
 }
 #app {
   min-height: 100vh;
-  min-height: 100dvh;
+  max-height: 100dvh;
   padding-top: env(safe-area-inset-top, 0);
+  overflow: hidden;
 }
 
 body {

@@ -213,7 +213,7 @@ defineExpose({
 
 .home-components-wrapper {
   display: flex;
-  margin-top: 55px;
+  margin-top: 30px;
   width: 80%;
   flex: 1 0 auto;
 }
@@ -299,7 +299,7 @@ defineExpose({
 
 .melody-container {
   width: 1229px;
-  margin-top: 25px;
+  margin-top: 15px;
 }
 
 .mode-slider {

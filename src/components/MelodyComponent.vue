@@ -186,7 +186,13 @@ async function toggleMelody() {
 
     // stop tracking when done
     const durationMs = (seq.totalQuantizedSteps / 4) * (60000 / 120);
+    console.log(durationMs);
     setTimeout(() => {
+      console.log('Timeout reached, loop', seq);
+      p.seekTo(0);
+      highlightPlayingSquares(p, seq);
+      console.log(p.getPlayState());
+      /*
       isPlaying.value = false;
       if (highlightInterval) {
         clearInterval(highlightInterval);
@@ -194,7 +200,8 @@ async function toggleMelody() {
       }
       lastStep = 0;
       grid.value.flat().forEach((sq) => (sq.isPlaying = false));
-    }, durationMs + 100);
+      */
+    }, durationMs);
 
   // Player is playing
   } else if (isPlaying.value && p.isPlaying()) {

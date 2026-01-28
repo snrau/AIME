@@ -11,6 +11,7 @@ import { useGridHistoryStore } from '@/stores/gridHistory';
 import * as mm from '@magenta/music';
 import { useModeStore } from '../stores/mode.js';
 import { useMidiPlayer } from '../stores/midioutput.js'
+import { toRaw } from 'vue';
 
 // Use responsive grid configuration
 const {
@@ -37,7 +38,7 @@ const justCompletedBatch = ref(false);
 
 const modeStore = useModeStore();
 
-const outputname = useMidiPlayer()
+const outputname = useMidiPlayer();
 
 // reactive state for pull highlighting
 const pullDirection = ref(null);
@@ -186,7 +187,7 @@ const handlePullSquareWithHighlight = async (eventData) => {
   }
 
   // Always save the current state before batch operation
-  const gridSnapshot = JSON.parse(JSON.stringify(grid.value));
+  const gridSnapshot = grid.value.map((item) => ({ ...item }));//JSON.parse(JSON.stringify(grid.value));
   gridHistoryStore.saveState(gridSnapshot);
 
   isBatchOperation.value = true;
@@ -233,7 +234,7 @@ const handleFormationButtonClickWithBatch = async (formation) => {
   }
 
   // Always save the current state before batch operation
-  const gridSnapshot = JSON.parse(JSON.stringify(grid.value));
+  const gridSnapshot = grid.value.map((item) => ({ ...item })); //JSON.parse(JSON.stringify(grid.value));
   console.log('Saving BEFORE state - grid has', gridSnapshot.length, 'squares');
   gridHistoryStore.saveState(gridSnapshot);
   console.log(
@@ -345,7 +346,11 @@ watch(
     // Debounce save operation to improve efficiency
     saveTimeout = setTimeout(() => {
       // deep clone
-      const gridSnapshot = JSON.parse(JSON.stringify(newGrid));
+      console.log(newGrid);
+      const gridSnapshot = newGrid.map(item => {
+        const { ref, ...rest } = toRaw(item);
+        return rest;
+      });//JSON.parse(JSON.stringify(toRaw(newGrid)));
       console.log('DEBOUNCED SAVE from grid watcher - grid has', gridSnapshot.length, 'squares');
       gridHistoryStore.saveState(gridSnapshot);
       console.log(
@@ -377,7 +382,7 @@ watch(isBatchOperation, (newValue, oldValue) => {
 
     // Wait a tick for all grid updates to complete, then save
     setTimeout(() => {
-      const gridSnapshot = JSON.parse(JSON.stringify(grid.value));
+      const gridSnapshot = grid.value.map((item) => ({ ...item })); //JSON.parse(JSON.stringify(grid.value));
       console.log('BATCH COMPLETION SAVE - grid has', gridSnapshot.length, 'squares');
       gridHistoryStore.saveState(gridSnapshot);
       console.log(
@@ -475,7 +480,7 @@ function checkIfInterpolate(eventData){
   let targetSquare = null
   let hasSpaceForPull = true;
   const {x,y,direction} = eventData
-  
+
   switch (direction) {
     case 'left':
       targetSquare = getSquareAtPosition(x - 1, y);
