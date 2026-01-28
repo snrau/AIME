@@ -166,8 +166,6 @@ const handlePullSquareWithHighlight = async (eventData) => {
   // Only show loading if there's actually going to be interpolation
   const willInterpolate = targetSquare && hasSpaceForPull;
 
-  console.log(willInterpolate, targetSquare, hasSpaceForPull, "willInterpolate")
-
   if (willInterpolate) {
     isPullLoading.value = true;
 
@@ -346,7 +344,6 @@ watch(
     // Debounce save operation to improve efficiency
     saveTimeout = setTimeout(() => {
       // deep clone
-      console.log(newGrid);
       const gridSnapshot = newGrid.map(item => {
         const { ref, ...rest } = toRaw(item);
         return rest;

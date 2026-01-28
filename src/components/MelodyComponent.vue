@@ -20,6 +20,8 @@ const {
 
 const outputname = useMidiPlayer();
 
+let playLoopTimeout = null;
+
 // Create a 2D array to represent the grid
 const grid = ref(
   Array.from({ length: rows.value }, (_, row) =>
@@ -158,6 +160,11 @@ async function resetMelody() {
   }
   isPlaying.value = false;
 
+  if (playLoopTimeout) {
+    clearInterval(playLoopTimeout);
+    playLoopTimeout = null;
+  }
+
   // Clear the highlight interval
   if (highlightInterval) {
     clearInterval(highlightInterval);
@@ -166,6 +173,26 @@ async function resetMelody() {
   // Reset all square highlighting
   grid.value.flat().forEach((sq) => (sq.isPlaying = false));
   lastStep = 0;
+}
+
+function playLoop(seq, p, durationMs) {
+  if (!seq.notes?.length) {
+    console.warn('No sequence to play');
+    return;
+  }
+
+  if (isPlaying.value === false) {
+    return;
+  }
+  console.log('Looping play', isPlaying.value, p.getPlayState());
+  p.seekTo(0);
+  highlightPlayingSquares(p, seq);
+
+  clearInterval(playLoopTimeout);
+  playLoopTimeout = setTimeout(() => {
+    console.log('Timeout reached, loop', seq);
+    playLoop(seq, p, durationMs);
+  }, durationMs);
 }
 
 async function toggleMelody() {
@@ -186,21 +213,10 @@ async function toggleMelody() {
 
     // stop tracking when done
     const durationMs = (seq.totalQuantizedSteps / 4) * (60000 / 120);
-    console.log(durationMs);
-    setTimeout(() => {
-      console.log('Timeout reached, loop', seq);
-      p.seekTo(0);
-      highlightPlayingSquares(p, seq);
-      console.log(p.getPlayState());
-      /*
-      isPlaying.value = false;
-      if (highlightInterval) {
-        clearInterval(highlightInterval);
-        highlightInterval = null;
-      }
-      lastStep = 0;
-      grid.value.flat().forEach((sq) => (sq.isPlaying = false));
-      */
+    clearInterval(playLoopTimeout)
+    playLoopTimeout = setTimeout(() => {
+      console.log("play playLoop");
+      playLoop(seq, p, durationMs);
     }, durationMs);
 
   // Player is playing
@@ -221,6 +237,12 @@ async function toggleMelody() {
     p.resume();
     isPlaying.value = true;
     highlightPlayingSquares(p, seq, lastStep);
+    const dMs = ((seq.totalQuantizedSteps - lastStep - 1) / 4) * (60000 / 120);
+    clearInterval(playLoopTimeout);
+    playLoopTimeout = setTimeout(() => {
+      console.log("resume playLoop");
+      playLoop(seq, p, (seq.totalQuantizedSteps / 4) * (60000 / 120));
+    }, dMs);
   }
 }
 
