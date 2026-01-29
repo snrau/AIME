@@ -20,6 +20,8 @@ const {
 
 const outputname = useMidiPlayer();
 
+let bufferseq = null
+
 let playLoopTimeout = null;
 
 // Create a 2D array to represent the grid
@@ -184,15 +186,24 @@ function playLoop(seq, p, durationMs) {
   if (isPlaying.value === false) {
     return;
   }
-  console.log('Looping play', isPlaying.value, p.getPlayState());
-  p.seekTo(0);
+  console.log('Looping play', durationMs, isPlaying.value, p.getPlayState());
+  p.stop();
+  p.start(seq);
+  //p.seekTo(0);
   highlightPlayingSquares(p, seq);
-
+  buildSequenceTimeout(durationMs);
   clearInterval(playLoopTimeout);
   playLoopTimeout = setTimeout(() => {
-    console.log('Timeout reached, loop', seq);
-    playLoop(seq, p, durationMs);
+    const dMs = (bufferseq.totalQuantizedSteps / 4) * (60000 / 120);
+    playLoop(bufferseq, p, dMs);
   }, durationMs);
+}
+
+function buildSequenceTimeout(duration){
+  setTimeout(() => {
+      bufferseq = buildSequenceFromSquares()
+      console.log('build done');
+    }, duration - 500);
 }
 
 async function toggleMelody() {
@@ -213,10 +224,12 @@ async function toggleMelody() {
 
     // stop tracking when done
     const durationMs = (seq.totalQuantizedSteps / 4) * (60000 / 120);
-    clearInterval(playLoopTimeout)
+    clearInterval(playLoopTimeout);
+    buildSequenceTimeout(durationMs);
     playLoopTimeout = setTimeout(() => {
-      console.log("play playLoop");
-      playLoop(seq, p, durationMs);
+      console.log("play playLoop", bufferseq);
+      const dMs = (bufferseq.totalQuantizedSteps / 4) * (60000 / 120);
+      playLoop(bufferseq, p, dMs);
     }, durationMs);
 
   // Player is playing
@@ -239,9 +252,11 @@ async function toggleMelody() {
     highlightPlayingSquares(p, seq, lastStep);
     const dMs = ((seq.totalQuantizedSteps - lastStep - 1) / 4) * (60000 / 120);
     clearInterval(playLoopTimeout);
+    buildSequenceTimeout(dMs);
     playLoopTimeout = setTimeout(() => {
       console.log("resume playLoop");
-      playLoop(seq, p, (seq.totalQuantizedSteps / 4) * (60000 / 120));
+      const durationMs = (bufferseq.totalQuantizedSteps / 4) * (60000 / 120);
+      playLoop(bufferseq, p, durationMs);
     }, dMs);
   }
 }
