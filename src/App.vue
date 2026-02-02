@@ -42,7 +42,7 @@ provide('setLoadRoomCallback', (callback) => {
   <PopupModal type="rooms" title="Rooms">
     <RoomSelection @load-room="handleLoadRoom" />
   </PopupModal>
-  <PopupModal type="tonicKey" title="Select Tonic Key">
+  <PopupModal type="tonicKey" title="Select Rootnote">
     <CircleOfFifths />
   </PopupModal>
   <PopupModal type="output" title="Select Midioutput">

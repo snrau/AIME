@@ -183,7 +183,7 @@ const getKeyPosition = (index) => {
       <div class="top-marker">▼</div>
     </div>
 
-    <p class="instruction">Drag to spin the circle. The key at the top is your tonic key.</p>
+    <p class="instruction">Drag to spin the circle. The note at the top is your root note.</p>
   </div>
 </template>
 

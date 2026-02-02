@@ -26,7 +26,7 @@ const chartData = computed(() => {
   const totalSteps = parseInt(props.sequenceData.totalQuantizedSteps) || 64;
 
   // Grid constants matching DrawComponent
-  const highestMidiNote = 89; // F6 top row
+  const highestMidiNote = 72;
   const totalGridRows = 30; // Number of rows in the grid c4 to f6
 
   // Create data points for the chart

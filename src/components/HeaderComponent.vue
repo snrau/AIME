@@ -37,7 +37,7 @@ const currentOutput = computed(() => midioutput.output);
       </button>
       <button class="btn" @click="openRooms">Rooms</button>
       <button class="btn tonic-key-btn" @click="openTonicKey">
-        Tonic Key: {{ currentTonicKey }}
+        Root note: {{ currentTonicKey }}
       </button>
       <button class="btn output-btn" @click="openOutput">
         Output: {{ currentOutput }}
