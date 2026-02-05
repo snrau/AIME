@@ -513,8 +513,9 @@ function handleGridCellClick(x, y) {
 }
 
 function handleRemoveSquare(eventData) {
-  const { x, y } = eventData;
-  removeSquare(x, y);
+  const { x, y, target } = eventData;
+  console.log(target);
+  if (target === 'grid') removeSquare(x, y);
 }
 
 // Get grid data including history for saving
@@ -706,12 +707,13 @@ function handleMouseUp(event) {
   isDrawing.value = false;
 
   if (selectedSquares.value.length > 0) {
-    showAddToMelodyPopup.value = true;
+    confirmAddToMelody();
+    //showAddToMelodyPopup.value = true;
   }
 }
 
 function confirmAddToMelody() {
-  showAddToMelodyPopup.value = false;
+  //showAddToMelodyPopup.value = false;
 
   const validSquares = selectedSquares.value
     .map((id) => {

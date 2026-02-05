@@ -101,6 +101,8 @@ export function calculateTonicBasedColor(sequenceData, tonicKey) {
   // Calculate brightness score for each note
   let brightnessSum = 0;
   let totalWeight = 0;
+  let hardcase = 0;
+
 
   sequenceData.notes.forEach((note) => {
     const noteClass = keysLookup[note.pitch % 12];
@@ -110,14 +112,21 @@ export function calculateTonicBasedColor(sequenceData, tonicKey) {
     const duration = parseInt(note.quantizedEndStep) - parseInt(note.quantizedStartStep);
 
     // Index ranges from -6 darkest to +6 brightest
-    brightnessSum += index * duration;
-    totalWeight += duration;
+    //brightnessSum += index * duration;
+    if (index !== 0) {
+      if (index === -6) hardcase += duration;
+      else brightnessSum += index > 0 ? duration : index < 0 ? -duration : 0;
+      totalWeight += duration;
+    }
   });
 
-  const avgBrightness = totalWeight > 0 ? brightnessSum / totalWeight : 0;
+  brightnessSum += brightnessSum > 0 ? hardcase : brightnessSum < 0 ? -hardcase : 0;
 
   // Normalize to 0-1 range
-  const normalizedBrightness = (avgBrightness + 6) / 12;
+  const normalizedBrightness =
+    totalWeight > 0 ? (brightnessSum + totalWeight) / (2 * totalWeight) : 0.5;
+
+  console.log(sequenceData, brightnessSum, totalWeight, normalizedBrightness);
 
   return interpolateColorPalette(normalizedBrightness);
 }

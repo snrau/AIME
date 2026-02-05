@@ -49,10 +49,44 @@ function copyToSquare(x, y, sequenceData) {
   }
 }
 
+function handleRemoveSquare(eventData) {
+  const { x, y, target } = eventData;
+  if (target === 'melody') {
+    grid.value[y][x].sequenceData = null;
+    grid.value[y][x].isPlaying = false;
+    for (let i = x + 1; i < grid.value[y].length; i++) {
+      if (grid.value[y][i].sequenceData !== null) {
+        // Move the data to the previous cell
+        grid.value[y][i - 1] = { ...grid.value[y][i] };
+
+        // Clear the current cell
+        grid.value[y][i] = {
+          id: `${y}-${i}`,
+          color: Colors.BROWN,
+          sequenceData: null,
+          isPlaying: false,
+        };
+      } else {
+        // Stop shifting if we encounter a null cell
+        grid.value[y][i] = {
+          id: `${y}-${i}`,
+          color: Colors.BROWN,
+          sequenceData: null,
+          isPlaying: false,
+        };
+        break;
+      }
+    }
+  }
+}
+
 function stopPlayer() {
   try {
-    if (player && player.isPlaying()) {
-      player.stop();
+    if (player1 && player1.isPlaying()) {
+      player1.stop();
+      isPlaying.value = false;
+    } else if (player2 && player2.isPlaying()) {
+      player2.stop();
       isPlaying.value = false;
     }
     // Clear the highlight interval
@@ -103,20 +137,31 @@ function buildSequenceFromSquares() {
   };
 }
 
-let player = null;
+let player1 = null;
+let player2 = null;
+let activePlayer = null; // Tracks the currently active player
 let highlightInterval = null;
 let currentStep = 0;
 let lastStep = 0;
 const isPlaying = ref(false);
 
 async function initPlayer() {
-  if (player && player.outputs[0].name === outputname.output) return player;
+  if (
+    player1 &&
+    player2 &&
+    player1.outputs[0].name === outputname.output &&
+    player2.outputs[0].name === outputname.output
+  )
+    return;
 
   if (outputname.output === 'default') {
-    player = new mm.Player();
-    console.log('Using Magenta Audio Player.', player);
-    player.outputs = [{ name: 'default' }];
-    return player;
+    player1 = new mm.Player();
+    player2 = new mm.Player();
+    console.log('Using Magenta Audio Players.', player1, player2);
+    player1.outputs = [{ name: 'default' }];
+    player2.outputs = [{ name: 'default' }];
+    activePlayer = player1;
+    return;
   }
   // Check WebMIDI support
   if (navigator.requestMIDIAccess) {
@@ -129,16 +174,21 @@ async function initPlayer() {
         const output = outputs.find((o) => o.name === outputname.output);
         // If a valid MIDI output is found, use it
         if (output) {
-          const midiPlayer = new mm.MIDIPlayer();
-          midiPlayer.outputs = [output];
-          player = midiPlayer;
+          const midiPlayer1 = new mm.MIDIPlayer();
+          const midiPlayer2 = new mm.MIDIPlayer();
+          midiPlayer1.outputs = [output];
+          midiPlayer2.outputs = [output];
+          player1 = midiPlayer1;
+          player2 = midiPlayer2;
+          activePlayer = player1;
 
           console.log('Using MIDI output:', output.name);
         } else {
           console.warn('Specified MIDI output not found: using AudioPlayer instead.');
-          player = new mm.Player(); // Fallback to AudioPlayer
+          player1 = new mm.Player();
+          player2 = new mm.Player();
         }
-        return player;
+        return;
       } else {
         console.warn('No MIDI outputs found: using AudioPlayer instead.');
       }
@@ -150,15 +200,20 @@ async function initPlayer() {
   }
 
   // Fallback if no MIDI output available
-  player = new mm.Player();
+  player1 = new mm.Player();
+  player2 = new mm.Player();
+  activePlayer = player1;
   console.log('Using Magenta Audio Player.');
 
-  return player;
+  return;
 }
 
 async function resetMelody() {
-  if (player.isPlaying()) {
-    player.stop();
+  if (player1.isPlaying()) {
+    player1.stop();
+  }
+  if (player2.isPlaying()) {
+    player2.stop();
   }
   isPlaying.value = false;
 
@@ -177,7 +232,7 @@ async function resetMelody() {
   lastStep = 0;
 }
 
-function playLoop(seq, p, durationMs) {
+function playLoop(seq) {
   if (!seq.notes?.length) {
     console.warn('No sequence to play');
     return;
@@ -186,29 +241,46 @@ function playLoop(seq, p, durationMs) {
   if (isPlaying.value === false) {
     return;
   }
-  console.log('Looping play', durationMs, isPlaying.value, p.getPlayState());
-  p.stop();
-  p.start(seq);
-  //p.seekTo(0);
-  highlightPlayingSquares(p, seq);
-  buildSequenceTimeout(durationMs);
-  clearInterval(playLoopTimeout);
+  console.log('switch player', seq);
+
+  if (activePlayer === player1) {
+    player1.stop();
+    player2.start(seq).then(() => {
+      playLoop(bufferseq, dMs);
+    });
+    activePlayer = player2;
+  } else {
+    player2.stop();
+    player1.start(seq).then(() => {
+      playLoop(bufferseq, dMs);
+    });
+    activePlayer = player1;
+  }
+
+  highlightPlayingSquares(activePlayer, seq);
+  const dMs = (seq.totalQuantizedSteps / 4) * (60000 / 120);
+  buildSequenceTimeout(dMs);
+
+  /*clearInterval(playLoopTimeout);
+  console.log(bufferseq, activePlayer === player1, player1.getPlayState(), player2.getPlayState());
   playLoopTimeout = setTimeout(() => {
     const dMs = (bufferseq.totalQuantizedSteps / 4) * (60000 / 120);
-    playLoop(bufferseq, p, dMs);
+    playLoop(bufferseq, dMs);
   }, durationMs);
+  */
 }
 
+let buildSequenceTimeoutId = null;
+
 function buildSequenceTimeout(duration){
-  setTimeout(() => {
-      bufferseq = buildSequenceFromSquares()
-      console.log('build done');
+  buildSequenceTimeoutId = setTimeout(() => {
+    bufferseq = buildSequenceFromSquares();
     }, duration - 500);
 }
 
 async function toggleMelody() {
   const seq = buildSequenceFromSquares();
-  const p = await initPlayer();
+  await initPlayer();
 
   if (!seq.notes?.length) {
     console.warn('No sequence to play');
@@ -216,48 +288,59 @@ async function toggleMelody() {
   }
 
   // Player is not playing and not paused
-  if (!isPlaying.value && p.getPlayState() !== 'paused') {
+  if (!isPlaying.value && activePlayer.getPlayState() !== 'paused') {
     currentStep = lastStep;
-    highlightPlayingSquares(p, seq);
-    p.start(seq);
+    highlightPlayingSquares(activePlayer, seq);
+    activePlayer.start(seq).then(() => {
+      playLoop(bufferseq);
+      clearInterval(buildSequenceTimeoutId);
+    });
     isPlaying.value = true;
 
     // stop tracking when done
     const durationMs = (seq.totalQuantizedSteps / 4) * (60000 / 120);
     clearInterval(playLoopTimeout);
     buildSequenceTimeout(durationMs);
+    /*
     playLoopTimeout = setTimeout(() => {
       console.log("play playLoop", bufferseq);
       const dMs = (bufferseq.totalQuantizedSteps / 4) * (60000 / 120);
-      playLoop(bufferseq, p, dMs);
+      playLoop(bufferseq, dMs);
     }, durationMs);
+    */
 
   // Player is playing
-  } else if (isPlaying.value && p.isPlaying()) {
-    p.pause();
+  } else if (isPlaying.value && activePlayer.isPlaying()) {
+    activePlayer.pause();
     isPlaying.value = false;
     // Clear highlighting when paused
     if (highlightInterval) {
       clearInterval(highlightInterval);
       highlightInterval = null;
-
+    }
+    if(buildSequenceTimeoutId){
+      clearTimeout(buildSequenceTimeoutId);
+      buildSequenceTimeoutId = null;
     }
     lastStep = currentStep;
     grid.value.flat().forEach((sq) => (sq.isPlaying = false));
 
     // Player is paused
-  } else if (p.getPlayState() === 'paused') {
-    p.resume();
+  } else if (activePlayer.getPlayState() === 'paused') {
+    activePlayer.resume();
     isPlaying.value = true;
-    highlightPlayingSquares(p, seq, lastStep);
+    highlightPlayingSquares(activePlayer, seq, lastStep);
+    const dMs = ((seq.totalQuantizedSteps - lastStep - 1) / 4) * (60000 / 120);
+    buildSequenceTimeout(dMs);
+    /*
     const dMs = ((seq.totalQuantizedSteps - lastStep - 1) / 4) * (60000 / 120);
     clearInterval(playLoopTimeout);
     buildSequenceTimeout(dMs);
     playLoopTimeout = setTimeout(() => {
       console.log("resume playLoop");
-      const durationMs = (bufferseq.totalQuantizedSteps / 4) * (60000 / 120);
-      playLoop(bufferseq, p, durationMs);
+      playLoop(bufferseq);
     }, dMs);
+    */
   }
 }
 
@@ -366,6 +449,7 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
             :y="rowIndex"
             :sequence-data="square.sequenceData"
             @copy-sequence="$emit('copy-sequence', $event)"
+            @remove-square="handleRemoveSquare"
           />
         </div>
       </div>
@@ -405,21 +489,21 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
 
 @media (max-width: 1300px) {
   .melody-container {
-    width: 1200px !important;
+    width: 1160px !important;
     margin: auto;
   }
 }
 
 @media (max-width: 1200px) {
   .melody-container {
-    width: 1000px !important;
+    width: 990px !important;
     margin: auto;
   }
 }
 
 @media (max-width: 1100px) {
   .melody-container {
-    width: 900px !important;
+    width: 950px !important;
     margin: auto;
   }
 }
@@ -462,7 +546,7 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
 
 .melody-rewind {
   position: absolute;
-  left: -130px;
+  left: -150px;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -486,7 +570,7 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
 
 .melody-play {
   position: absolute;
-  left: -60px;
+  left: -80px;
   top: 50%;
   transform: translateY(-50%);
 }
@@ -510,13 +594,19 @@ function highlightPlayingSquares(p, seq, startStep = 0) {
 
 @media (max-width: 1300px) {
   .melody-play {
-    left: -60px;
+    left: -80px;
+  }
+  .melody-rewind {
+    left: -150px;
   }
 }
 
 @media (max-width: 1200px) {
   .melody-play {
     left: -60px;
+  }
+  .melody-rewind {
+    left: -130px;
   }
 }
 

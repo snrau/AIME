@@ -213,7 +213,7 @@ defineExpose({
 
 .home-components-wrapper {
   display: flex;
-  margin-top: 30px;
+  margin-top: 40px;
   width: 80%;
   flex: 1 0 auto;
 }
@@ -225,13 +225,13 @@ defineExpose({
 
 .action-buttons-left,
 .action-buttons-right {
-  margin-top: 37px;
+  margin-top: 3px;
   display: flex;
   flex-direction: column;
 }
 
 .action-buttons-left {
-  margin-right: 50px;
+  margin-right: 30px;
 }
 
 .action-buttons-right .action-buttons-btn-group {
@@ -270,7 +270,7 @@ defineExpose({
 }
 
 .action-buttons-right {
-  margin-left: 50px;
+  margin-left: 30px;
 }
 
 .action-buttons-left .action-buttons-btn-group {
@@ -298,15 +298,15 @@ defineExpose({
 }
 
 .melody-container {
-  width: 1229px;
-  margin-top: 15px;
+  width: 1270px;
+  margin-top: 10px;
 }
 
 .mode-slider {
   display: flex;
   flex-direction: column;
   align-items: center;
-  margin-top: 25px;
+  margin-top: 20px;
 }
 
 .mode-slider input {
@@ -403,6 +403,19 @@ defineExpose({
   opacity: 0.7;
 }
 
+@media (max-width: 1400px) {
+  .melody-container {
+    width: 1160px;
+    margin-top: 10px;
+  }
+
+  .action-buttons-btn-group {
+    height: 90px;
+    margin-bottom: 10px;
+  }
+
+}
+
 @media (max-width: 1200px) {
   .action-buttons-left {
     margin-right: 30px !important;
@@ -418,9 +431,6 @@ defineExpose({
   .action-buttons-left .action-buttons-btn-group {
     margin: auto;
   }
-}
-
-@media (max-width: 1100px) {
 }
 
 @media (max-width: 768px) {

@@ -58,6 +58,9 @@ watch(
     if (newSequenceData) {
       storedSequenceData.value = newSequenceData;
     }
+    if (!newSequenceData) {
+      storedSequenceData.value = null;
+    }
   }
 );
 
@@ -399,7 +402,9 @@ function onMouseUp(event) {
     // Check if remove mode is active
     if (modeStore.isRemoveMode) {
       // Emit remove event and prevent other actions
-      emit('remove-square', { x: props.x, y: props.y });
+      let target = 'grid';
+      if (container && container.dataset.component === 'melody') target = 'melody';
+      emit('remove-square', { x: props.x, y: props.y, target: target });
     } else {
       // toggle draw component
       showDrawComponent.value = !showDrawComponent.value;
@@ -551,7 +556,9 @@ function onTouchEnd(event) {
     // Check if remove mode is active
     if (modeStore.isRemoveMode) {
       // Emit remove event and prevent other actions
-      emit('remove-square', { x: props.x, y: props.y });
+      let target = 'grid';
+      if (container && container.dataset.component === 'melody') target = 'melody';
+      emit('remove-square', { x: props.x, y: props.y, target: target });
     } else {
       // Normal tap behavior: toggle draw component
       showDrawComponent.value = !showDrawComponent.value;
