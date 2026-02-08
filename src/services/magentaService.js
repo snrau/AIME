@@ -39,6 +39,25 @@ export class MagentaService {
     }
   }
 
+  async sampleSequences(count = 1, temperature = 0.5, stepsPerQuarter = 4, qpm = 120) {
+    await this.initializeModel();
+
+    try {
+      const samples = await this.model.sample(count, temperature, undefined, stepsPerQuarter, qpm);
+      return samples.map((sequence) => {
+        const quantized = this.quantizeSequence(sequence, stepsPerQuarter);
+        quantized.totalQuantizedSteps = 64;
+        quantized.notes = quantized.notes.filter(
+          (n) => n.quantizedStartStep < 64 && n.quantizedEndStep <= 64
+        );
+        return quantized;
+      });
+    } catch (e) {
+      console.warn('Could not sample sequences from MusicVAE:', e);
+      return [];
+    }
+  }
+
   async interpolateSequences(sequences, numInterpolations) {
     await this.initializeModel();
 

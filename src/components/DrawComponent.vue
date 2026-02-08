@@ -461,26 +461,28 @@ function generateRandomSequence() {
 
 async function generateAIVariation() {
   const sequence = buildSequenceFromGrid();
-
-  if (!sequence.notes || sequence.notes.length === 0) {
-    alert('Empty Note Sequence!');
-    return;
-  }
-
   loadingButton.value = 'ai-variation';
 
   try {
-    const normalizedSequence = {
-      ...sequence,
-      totalQuantizedSteps: 64,
-      notes: sequence.notes.map((note) => ({
-        ...note,
-        quantizedStartStep: Number(note.quantizedStartStep),
-        quantizedEndStep: Number(note.quantizedEndStep),
-      })),
-    };
+    let variation = null;
 
-    const [variation] = await magentaService.generateSimilarSequences(normalizedSequence, 1, 0.75);
+    if (!sequence.notes || sequence.notes.length === 0) {
+      const [sample] = await magentaService.sampleSequences(1, 0.75);
+      variation = sample ?? null;
+    } else {
+      const normalizedSequence = {
+        ...sequence,
+        totalQuantizedSteps: 64,
+        notes: sequence.notes.map((note) => ({
+          ...note,
+          quantizedStartStep: Number(note.quantizedStartStep),
+          quantizedEndStep: Number(note.quantizedEndStep),
+        })),
+      };
+
+      const [similar] = await magentaService.generateSimilarSequences(normalizedSequence, 1, 0.75);
+      variation = similar ?? null;
+    }
 
     if (!variation) {
       alert('Could not generate an AI variation right now.');
