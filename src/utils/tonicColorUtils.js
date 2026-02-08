@@ -103,7 +103,6 @@ export function calculateTonicBasedColor(sequenceData, tonicKey) {
   let totalWeight = 0;
   let hardcase = 0;
 
-
   sequenceData.notes.forEach((note) => {
     const noteClass = keysLookup[note.pitch % 12];
     const index = qc.findLastIndex((v) => v === noteClass) - 6;

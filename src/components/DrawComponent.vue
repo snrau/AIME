@@ -2,6 +2,7 @@
 import { ref, onMounted, onUnmounted } from 'vue';
 import * as mm from '@magenta/music';
 import { useMidiPlayer } from '../stores/midioutput.js';
+import { MagentaService } from '../services/magentaService.js';
 
 // Piano Roll layout
 const numSteps = 64;
@@ -12,6 +13,7 @@ const numPitches = 25;
 const highestMidiNote = 72;
 
 const outputname = useMidiPlayer();
+const magentaService = new MagentaService();
 
 const props = defineProps({
   sequenceData: {
@@ -409,7 +411,7 @@ async function playMidi() {
     // Stop any currently playing sequence
     if (player.isPlaying()) {
       player.stop();
-      return
+      return;
     }
 
     // Start playing the sequence
@@ -454,6 +456,43 @@ function generateRandomSequence() {
     for (let stepIdx = startStep; stepIdx < endStep; stepIdx++) {
       grid.value[pitchIdx][stepIdx] = { active: true, groupId };
     }
+  }
+}
+
+async function generateAIVariation() {
+  const sequence = buildSequenceFromGrid();
+
+  if (!sequence.notes || sequence.notes.length === 0) {
+    alert('Empty Note Sequence!');
+    return;
+  }
+
+  loadingButton.value = 'ai-variation';
+
+  try {
+    const normalizedSequence = {
+      ...sequence,
+      totalQuantizedSteps: 64,
+      notes: sequence.notes.map((note) => ({
+        ...note,
+        quantizedStartStep: Number(note.quantizedStartStep),
+        quantizedEndStep: Number(note.quantizedEndStep),
+      })),
+    };
+
+    const [variation] = await magentaService.generateSimilarSequences(normalizedSequence, 1, 0.75);
+
+    if (!variation) {
+      alert('Could not generate an AI variation right now.');
+      return;
+    }
+
+    initializeGridFromSequence(variation);
+  } catch (error) {
+    console.error('Could not generate AI variation:', error);
+    alert('Could not generate an AI variation right now.');
+  } finally {
+    loadingButton.value = null;
   }
 }
 
@@ -668,6 +707,28 @@ function buildSequenceFromGrid() {
             </span>
             <span v-else class="button-content">
               <i class="fa-solid fa-dice"></i>
+            </span>
+          </button>
+          <button
+            @click="generateAIVariation"
+            @touchstart="
+              (e) => {
+                e.preventDefault();
+                handleButtonTouchStart('ai-variation', generateAIVariation);
+              }
+            "
+            @touchend="handleButtonTouchEnd"
+            @touchcancel="handleButtonTouchEnd"
+            :class="{ 'touch-active': activeButton === 'ai-variation' }"
+          >
+            <span v-if="loadingButton === 'ai-variation'" class="button-content">
+              <div class="button-spinner"></div>
+              <span style="visibility: hidden">
+                <i class="fa-solid fa-robot"></i>
+              </span>
+            </span>
+            <span v-else class="button-content">
+              <i class="fa-solid fa-robot"></i>
             </span>
           </button>
         </div>
