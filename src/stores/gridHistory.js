@@ -1,5 +1,7 @@
 import { defineStore } from 'pinia';
 import { ref, computed } from 'vue';
+import { clonePlain } from '../utils/cloneUtils';
+import { cloneGrid, cloneSequence } from '@/utils/cloneUtils';
 
 export const useGridHistoryStore = defineStore('gridHistory', () => {
   // Current step in history
@@ -22,7 +24,9 @@ export const useGridHistoryStore = defineStore('gridHistory', () => {
   // Add a new state to history
   function saveState(gridState) {
     // deep clone
-    const clonedGrid = gridState.map((item) => ({ ...item }));
+    const clonedGrid = cloneGrid(gridState);
+
+    console.log('saveState', gridState, clonedGrid);
 
     // If we are not at the end of history truncate future states, branch out
     if (currentStep.value < history.value.length - 1) {
@@ -53,7 +57,8 @@ export const useGridHistoryStore = defineStore('gridHistory', () => {
   }
 
   function initializeHistory(initialGrid) {
-    history.value = [initialGrid.map((item) => ({ ...item }))];
+    const cleanGrid = clonePlain(initialGrid);
+    history.value = [cleanGrid];
     currentStep.value = 0;
   }
 

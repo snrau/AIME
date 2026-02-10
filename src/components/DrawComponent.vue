@@ -220,6 +220,8 @@ async function initPlayer() {
 }
 
 async function playIndividualNote(midiNote) {
+  return midiNote;
+  /*
   try {
     await initPlayer();
 
@@ -248,6 +250,7 @@ async function playIndividualNote(midiNote) {
   } catch (error) {
     console.warn('Could not play individual note:', error);
   }
+  */
 }
 
 async function onMouseDown(pitchIdx, stepIdx) {

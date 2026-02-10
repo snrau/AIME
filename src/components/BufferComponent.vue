@@ -3,6 +3,7 @@ import SquareComponent from './SquareComponent.vue';
 import { Colors } from '@/constants/colors';
 import { ref, watch } from 'vue';
 import { useResponsiveBuffer } from '@/utils/gridUtils';
+import { cloneSequence } from '@/utils/cloneUtils';
 
 defineProps({
   title: String,
@@ -55,7 +56,9 @@ watch([rows, cols], ([newRows, newCols]) => {
 function copyToSquare(x, y, sequenceData) {
   const targetSquare = grid.value[y][x];
   if (targetSquare) {
-    targetSquare.sequenceData = JSON.parse(JSON.stringify(sequenceData));
+    const clone = cloneSequence(sequenceData)
+    targetSquare.sequenceData = clone;
+    console.log(`Copying sequence to square at (${x}, ${y})`, sequenceData, clone, targetSquare.sequenceData);
   }
 }
 

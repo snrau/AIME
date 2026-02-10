@@ -14,6 +14,7 @@ export const useRoomStore = defineStore('room', () => {
   function saveRoom(roomData) {
     const timestamp = new Date().toISOString();
 
+
     const newRoom = {
       id: `room-${roomCounter.value++}`,
       name: `Room ${roomCounter.value - 1}`,
@@ -24,6 +25,8 @@ export const useRoomStore = defineStore('room', () => {
       createdAt: timestamp,
       updatedAt: timestamp,
     };
+
+    console.log('newRoom', newRoom)
 
     rooms.value.push(newRoom);
     currentRoomId.value = newRoom.id;
@@ -36,6 +39,7 @@ export const useRoomStore = defineStore('room', () => {
 
   function loadRoom(roomId) {
     const room = rooms.value.find((r) => r.id === roomId);
+    console.log('loadRoom', roomId, room);
     if (room) {
       currentRoomId.value = roomId;
       return room;

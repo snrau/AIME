@@ -1,4 +1,6 @@
 import * as mm from '@magenta/music';
+import * as tf from '@tensorflow/tfjs';
+import '@tensorflow/tfjs-backend-webgl';
 
 export class MagentaService {
   constructor() {
@@ -22,6 +24,72 @@ export class MagentaService {
     return sequenceData;
   }
 
+  // Wrap heavy computation in requestIdleCallback to avoid blocking audio
+  async runAsync(fn) {
+    return new Promise((resolve) => {
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(async () => {
+          const result = await fn();
+          resolve(result);
+        });
+      } else {
+        // Fallback
+        setTimeout(async () => {
+          const result = await fn();
+          resolve(result);
+        }, 0);
+      }
+    });
+  }
+
+  async sampleSequences(count = 1, temperature = 0.5, stepsPerQuarter = 4, qpm = 120) {
+    await this.initializeModel();
+
+    return this.runAsync(async () => {
+      const samples = await this.model.sample(count, temperature, undefined, stepsPerQuarter, qpm);
+      return samples.map((sequence) => {
+        const quantized = this.quantizeSequence(sequence, stepsPerQuarter);
+        quantized.totalQuantizedSteps = 64;
+        quantized.notes = quantized.notes.filter(
+          (n) => n.quantizedStartStep < 64 && n.quantizedEndStep <= 64
+        );
+        return quantized;
+      });
+    });
+  }
+
+  async interpolateSequences(sequences, numInterpolations) {
+    await this.initializeModel();
+
+    return this.runAsync(async () => {
+      const quantized = sequences.map(this.quantizeSequence);
+      return await this.model.interpolate(quantized, numInterpolations);
+    });
+  }
+
+  async bilinearInterpolate(sequences, dimensions, temperature = 0.5) {
+    await this.initializeModel();
+
+    return this.runAsync(async () => {
+      const quantized = sequences.map(this.quantizeSequence);
+      return await this.model.interpolate(quantized, dimensions, temperature);
+    });
+  }
+
+  async generateSimilarSequences(sequenceData, count = 3, temperature = 0.75) {
+    await this.initializeModel();
+
+    return this.runAsync(async () => {
+      const quantized = this.quantizeSequence(sequenceData);
+      quantized.totalQuantizedSteps = 64;
+      quantized.notes = quantized.notes.filter(
+        (n) => n.quantizedStartStep < 64 && n.quantizedEndStep <= 64
+      );
+      return await this.model.similar(quantized, count, temperature);
+    });
+  }
+
+  /*
   async generateSimilarSequences(sequenceData, count = 3, temperature = 0.75) {
     await this.initializeModel();
 
@@ -71,4 +139,7 @@ export class MagentaService {
     const quantizedSequences = sequences.map((seq) => this.quantizeSequence(seq));
     return await this.model.interpolate(quantizedSequences, dimensions, 0.5);
   }
+  */
+
+
 }

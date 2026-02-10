@@ -64,17 +64,32 @@ function formatDate(dateString) {
 function countSquares(gridData) {
   if (!gridData) return 0;
 
-  // Handle the grid history structure from gridHistoryStore
-  if (gridData.history && Array.isArray(gridData.history)) {
-    const currentStep =
-      gridData.currentStep !== undefined ? gridData.currentStep : gridData.history.length - 1;
-    const currentGrid = gridData.history[currentStep];
-    return currentGrid ? currentGrid.length : 0;
-  }
+  try {
+    // Handle the grid history structure from gridHistoryStore
+    if (gridData.history) {
+      const currentStep =
+        gridData.currentStep !== undefined ? gridData.currentStep : gridData.history.length - 1;
 
-  // Fallback for direct grid array
-  if (Array.isArray(gridData)) {
-    return gridData.length;
+      const currentGrid = gridData.history[currentStep];
+
+      if (currentGrid) {
+        console.log('Current grid at step', currentStep, currentGrid);
+      }
+
+      if (!currentGrid) return 0;
+
+      // Array → length
+      if (Array.isArray(currentGrid)) {
+        return currentGrid.length;
+      }
+
+      // Object → number of keys
+      if (typeof currentGrid === 'object') {
+        return Object.keys(currentGrid).length;
+      }
+    }
+  } catch (error) {
+    console.error('Error counting squares:', error);
   }
 
   return 0;

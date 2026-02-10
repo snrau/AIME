@@ -6,6 +6,7 @@ import { ref } from 'vue';
 
 import { useResponsiveMelody } from '@/utils/gridUtils';
 import { useMidiPlayer } from '../stores/midioutput.js';
+import { cloneSequence } from '@/utils/cloneUtils';
 
 // Use responsive melody configuration
 const {
@@ -45,7 +46,7 @@ function copyToSquare(x, y, sequenceData) {
 
   const targetSquare = grid.value[y][x];
   if (targetSquare) {
-    targetSquare.sequenceData = JSON.parse(JSON.stringify(sequenceData));
+    targetSquare.sequenceData = cloneSequence(sequenceData);
   }
 }
 

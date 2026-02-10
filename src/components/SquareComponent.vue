@@ -4,6 +4,7 @@ import DrawComponent from './DrawComponent.vue';
 import SequencePreview from './SequencePreview.vue';
 import { ref, onMounted, watch } from 'vue';
 import { useModeStore } from '@/stores/mode.js';
+import { cloneSequence } from '@/utils/cloneUtils';
 
 const props = defineProps({
   color: Colors,
@@ -96,7 +97,7 @@ function onMouseDown(event) {
   ghostPosition.value = { x: event.clientX, y: event.clientY };
 
   draggedSequenceData = storedSequenceData.value
-    ? JSON.parse(JSON.stringify(storedSequenceData.value))
+    ? cloneSequence(storedSequenceData.value)
     : null;
 
   // Add global event listeners
@@ -123,7 +124,7 @@ function onTouchStart(event) {
   ghostPosition.value = { x: touch.clientX, y: touch.clientY };
 
   draggedSequenceData = storedSequenceData.value
-    ? JSON.parse(JSON.stringify(storedSequenceData.value))
+    ? cloneSequence(storedSequenceData.value)
     : null;
 
   // Add global event listeners
@@ -147,18 +148,22 @@ function onMouseMove(event) {
   // Check if we have moved beyond the threshold
   const distance = Math.sqrt(deltaX * deltaX + deltaY * deltaY);
 
-  const target = findClosestCell(event)
+  const target = findClosestCell(event);
 
-  if (distance > dragThreshold) {
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      currentDragDirection = deltaX > 0 ? 'left' : 'right';
-    } else {
-      currentDragDirection = deltaY > 0 ? 'up' : 'down';
+  if(target){
+    if (distance > dragThreshold) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        currentDragDirection = deltaX > 0 ? 'left' : 'right';
+      } else {
+        currentDragDirection = deltaY > 0 ? 'up' : 'down';
+      }
+      emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y, target:target });
+    }else{
+      currentDragDirection = null
+      emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
     }
-    emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y, target:target });
   }else{
-    currentDragDirection = null
-    emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
+    emit('pull-end')
   }
 }
 
@@ -177,16 +182,20 @@ function onTouchMove(event) {
 
   const target = findClosestCell(touch)
 
-  if (distance > dragThreshold) {
-    if (Math.abs(deltaX) > Math.abs(deltaY)) {
-      currentDragDirection = deltaX > 0 ? 'left' : 'right';
-    } else {
-      currentDragDirection = deltaY > 0 ? 'up' : 'down';
+  if(target){
+    if (distance > dragThreshold) {
+      if (Math.abs(deltaX) > Math.abs(deltaY)) {
+        currentDragDirection = deltaX > 0 ? 'left' : 'right';
+      } else {
+        currentDragDirection = deltaY > 0 ? 'up' : 'down';
+      }
+      emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y, target:target });
+    } else{
+      currentDragDirection = null
+      emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
     }
-    emit('pull-preview', { direction: currentDragDirection, x: props.x, y: props.y, target:target });
-  } else{
-    currentDragDirection = null
-    emit('pull-preview', { direction: null, x: props.x, y: props.y, target:{x:props.x, y: props.y} });
+  }else{
+    emit('pull-end')
   }
 
   // Prevent default to avoid scrolling
@@ -202,7 +211,7 @@ function findClosestCell(event){
   const node = document.elementFromPoint(event.clientX, event.clientY);
   const container = node ? node.closest('[data-component]') : null;
 
-  if (container && modeStore.isCopyMode) {
+  if (container && container?.classList?.contains('grid-container') && modeStore.isCopyMode) {
     let targetX, targetY;
 
     // Try to find a square element first
@@ -266,7 +275,7 @@ function findClosestCell(event){
     }
     return {x: targetX, y:targetY}
   }
-  return {x: 0, y:0}
+  return null
 }
 
 function onMouseUp(event) {

@@ -6,12 +6,14 @@ import { useFormations } from '@/composables/useFormations';
 import { usePullSquare } from '@/composables/usePullSquare';
 import { useResponsiveGrid } from '@/utils/gridUtils';
 import { MagentaService } from '@/services/magentaService';
+import { MagentaWorkerClient } from '@/services/MagentaWorkerClient';
 import { useFirstSquareLogic } from '@/composables/useFirstSquareLogic';
 import { useGridHistoryStore } from '@/stores/gridHistory';
 import * as mm from '@magenta/music';
 import { useModeStore } from '../stores/mode.js';
 import { useMidiPlayer } from '../stores/midioutput.js'
 import { toRaw } from 'vue';
+import { cloneGrid, clonePlain, cloneSequence, cloneHistory } from '@/utils/cloneUtils';
 
 // Use responsive grid configuration
 const {
@@ -185,7 +187,7 @@ const handlePullSquareWithHighlight = async (eventData) => {
   }
 
   // Always save the current state before batch operation
-  const gridSnapshot = grid.value.map((item) => ({ ...item }));//JSON.parse(JSON.stringify(grid.value));
+  const gridSnapshot = cloneGrid(grid.value);//JSON.parse(JSON.stringify(grid.value));
   gridHistoryStore.saveState(gridSnapshot);
 
   isBatchOperation.value = true;
@@ -232,7 +234,7 @@ const handleFormationButtonClickWithBatch = async (formation) => {
   }
 
   // Always save the current state before batch operation
-  const gridSnapshot = grid.value.map((item) => ({ ...item })); //JSON.parse(JSON.stringify(grid.value));
+  const gridSnapshot = cloneGrid(grid.value); //JSON.parse(JSON.stringify(grid.value));
   console.log('Saving BEFORE state - grid has', gridSnapshot.length, 'squares');
   gridHistoryStore.saveState(gridSnapshot);
   console.log(
@@ -262,8 +264,8 @@ onMounted(async () => {
   initializeGrid();
 
   // Initialize the MusicVAE model
-  await magentaService.initializeModel();
-  console.log('MusicVAE model initialized and ready');
+  //await magentaService.initializeModel();
+  //console.log('MusicVAE model initialized and ready');
 
   // Set flag to prevent initial state from triggering a save
   isRestoringState.value = true;
@@ -379,7 +381,7 @@ watch(isBatchOperation, (newValue, oldValue) => {
 
     // Wait a tick for all grid updates to complete, then save
     setTimeout(() => {
-      const gridSnapshot = grid.value.map((item) => ({ ...item })); //JSON.parse(JSON.stringify(grid.value));
+      const gridSnapshot = cloneGrid(grid.value); //JSON.parse(JSON.stringify(grid.value));
       console.log('BATCH COMPLETION SAVE - grid has', gridSnapshot.length, 'squares');
       gridHistoryStore.saveState(gridSnapshot);
       console.log(
@@ -469,7 +471,11 @@ function handleRedo() {
 function copyToSquare(x, y, sequenceData) {
   const targetSquare = getSquareAtPosition(x, y);
   if (targetSquare) {
-    updateSquare(x, y, JSON.parse(JSON.stringify(sequenceData)));
+    updateSquare(
+      x,
+      y,
+      cloneSequence(sequenceData)
+    );
   }
 }
 
@@ -524,7 +530,7 @@ function getGridData() {
   const currentStepValue = gridHistoryStore.currentStep?.value ?? gridHistoryStore.currentStep ?? 0;
 
   return {
-    history: JSON.parse(JSON.stringify(historyValue)),
+    history: clonePlain(historyValue),
     currentStep: currentStepValue,
   };
 }
@@ -532,6 +538,7 @@ function getGridData() {
 // Load grid data from a saved room
 function loadGridData(gridData) {
   // Stop any playing sequences when switching rooms
+  /*
   try {
     if (player && player.isPlaying()) {
       player.stop();
@@ -539,6 +546,7 @@ function loadGridData(gridData) {
   } catch (error) {
     console.warn('Error stopping player during room switch:', error);
   }
+    */
 
   // Cancel any pending saves
   if (saveTimeout) {
@@ -551,7 +559,7 @@ function loadGridData(gridData) {
 
   // Restore the history
   if (gridData.history && gridData.currentStep !== undefined) {
-    gridHistoryStore.history = JSON.parse(JSON.stringify(gridData.history));
+    gridHistoryStore.history = cloneHistory(gridData.history);
     gridHistoryStore.currentStep = gridData.currentStep;
 
     // Get the current grid state from history

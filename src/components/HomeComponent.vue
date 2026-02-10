@@ -4,6 +4,7 @@ import BufferComponent from './BufferComponent.vue';
 import MelodyComponent from './MelodyComponent.vue';
 import { ref, computed } from 'vue';
 import { useModeStore } from '../stores/mode.js';
+import { cloneMelody } from '../utils/cloneUtils.js';
 
 const roomRef = ref(null);
 const buffer1Ref = ref(null);
@@ -68,28 +69,19 @@ function getRoomData() {
     if (melodyRef.value?.grid) {
       const gridRef = melodyRef.value.grid;
 
-      melodyData =
-        gridRef.value !== undefined
-          ? JSON.parse(JSON.stringify(gridRef.value))
-          : JSON.parse(JSON.stringify(gridRef));
+      melodyData = gridRef.value !== undefined ? cloneMelody(gridRef.value) : cloneMelody(gridRef);
     }
 
     let buffer1Data = null;
     if (buffer1Ref.value?.grid) {
       const gridRef = buffer1Ref.value.grid;
-      buffer1Data =
-        gridRef.value !== undefined
-          ? JSON.parse(JSON.stringify(gridRef.value))
-          : JSON.parse(JSON.stringify(gridRef));
+      buffer1Data = gridRef.value !== undefined ? cloneMelody(gridRef.value) : cloneMelody(gridRef);
     }
 
     let buffer2Data = null;
     if (buffer2Ref.value?.grid) {
       const gridRef = buffer2Ref.value.grid;
-      buffer2Data =
-        gridRef.value !== undefined
-          ? JSON.parse(JSON.stringify(gridRef.value))
-          : JSON.parse(JSON.stringify(gridRef));
+      buffer2Data = gridRef.value !== undefined ? cloneMelody(gridRef.value) : cloneMelody(gridRef);
     }
 
     const roomData = {
@@ -117,13 +109,14 @@ function loadRoomData(room) {
     roomRef.value.loadGridData(room.grid);
   }
   if (room.melody && melodyRef.value?.grid) {
-    melodyRef.value.grid.value = JSON.parse(JSON.stringify(room.melody));
+    melodyRef.value.grid.value = cloneMelody(room.melody)
   }
   if (room.buffer1 && buffer1Ref.value?.grid) {
-    buffer1Ref.value.grid.value = JSON.parse(JSON.stringify(room.buffer1));
+    buffer1Ref.value.grid.value = cloneMelody(room.buffer1)
   }
   if (room.buffer2 && buffer2Ref.value?.grid) {
-    buffer2Ref.value.grid.value = JSON.parse(JSON.stringify(room.buffer2));
+    // eslint-disable-next-line no-undef
+    buffer2Ref.value.grid.value = cloneMelody(room.buffer2)
   }
 }
 
