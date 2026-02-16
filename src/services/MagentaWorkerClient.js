@@ -23,7 +23,7 @@ export class MagentaWorkerClient {
     };
   }
 
-  call(type, payload, timeout = 10000) {
+  call(type, payload, timeout = 100000) {
     const id = crypto.randomUUID();
 
     console.log(`[MagentaClient] call: ${type}`, payload);
