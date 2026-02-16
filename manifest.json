@@ -1,7 +1,7 @@
 {
   "name": "Aime",
   "short_name": "Aime",
-  "start_url": "/AIME/",
+  "start_url": "/",
   "display": "fullscreen",
   "background_color": "#ffffff",
   "theme_color": "#ffffff",
