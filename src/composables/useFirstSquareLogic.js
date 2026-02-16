@@ -1,4 +1,4 @@
-export function useFirstSquareLogic(placeSquare, grid, magentaService, updateSquare) {
+export function useFirstSquareLogic(placeSquare, grid, magentaService, magentaClient, updateSquare) {
   const handleFirstSquareSequenceGenerated = async (sequenceData) => {
     // Check if sequence has actual notes
     if (!sequenceData || !sequenceData.notes || sequenceData.notes.length === 0) {
@@ -34,7 +34,7 @@ export function useFirstSquareLogic(placeSquare, grid, magentaService, updateSqu
       // Generate 3 similar sequences
       let similarSequences = [];
       try {
-        similarSequences = await magentaService.generateSimilarSequences(
+        similarSequences = await magentaClient.generateSimilarSequences(
           quantizedSequence,
           3,
           0.75

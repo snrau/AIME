@@ -27,6 +27,7 @@ const {
 } = useResponsiveGrid();
 
 const magentaService = new MagentaService();
+const magentaClient = new MagentaWorkerClient();
 const gridHistoryStore = useGridHistoryStore();
 
 // Flag to prevent saving states during undo/redo operations
@@ -68,6 +69,7 @@ const { squareFormations, handleFormationButtonClick, isFormationLoading } = use
   grid,
   getSquareAtPosition,
   magentaService,
+  magentaClient,
   placeSquare,
   clearGrid,
   rows.value,
@@ -78,6 +80,7 @@ const { handleFirstSquareSequenceGenerated } = useFirstSquareLogic(
   placeSquare,
   grid,
   magentaService,
+  magentaClient,
   updateSquare
 );
 const { handlePullSquare } = usePullSquare(
@@ -87,6 +90,7 @@ const { handlePullSquare } = usePullSquare(
   rows.value,
   placeSquare,
   magentaService,
+  magentaClient,
   updateSquare,
   isBatchOperation
 );

@@ -5,6 +5,7 @@ export function usePullSquare(
   rows,
   placeSquare,
   magentaService,
+  magentaClient,
   updateSquare,
   isBatchOperation
 ) {
@@ -213,7 +214,7 @@ export function usePullSquare(
           sequencesInOrder = [firstSequence, lastSequence];
 
           // Generate interpolations between the two sequences in correct spatial order
-          const interpolatedSequences = await magentaService.interpolateSequences(
+          const interpolatedSequences = await magentaClient.interpolateSequences(
             sequencesInOrder,
             numInterpolations
           );

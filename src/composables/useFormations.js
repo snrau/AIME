@@ -5,6 +5,7 @@ export function useFormations(
   grid,
   getSquareAtPosition,
   magentaService,
+  magentaClient,
   placeSquare,
   clearGrid,
   rows,
@@ -95,7 +96,7 @@ export function useFormations(
 
       // Generate interpolated sequences using bilinear interpolation
       // The result is in row-major order with corners at [0, 0], [0, cols-1], [rows-1, 0], [rows-1, cols-1]
-      const interpolatedSequences = await magentaService.bilinearInterpolate(
+      const interpolatedSequences = await magentaClient.bilinearInterpolate(
         sequences,
         [interpolationColumns, interpolationRows],
         0.5

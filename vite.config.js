@@ -10,10 +10,16 @@ export default defineConfig({
   base: '/AIME/',
   resolve: {
     alias: {
-      '@': fileURLToPath(new URL('./src', import.meta.url)),
+      '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
   define: {
-    global: 'window',
+    global: {},//'window',
+  },
+  optimizeDeps: {
+    include: ['@tensorflow/tfjs', '@tensorflow/tfjs-core'],
+  },
+  worker: {
+    format: 'es', // Use ES module format for workers
   },
 });

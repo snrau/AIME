@@ -125,8 +125,6 @@ export function calculateTonicBasedColor(sequenceData, tonicKey) {
   const normalizedBrightness =
     totalWeight > 0 ? (brightnessSum + totalWeight) / (2 * totalWeight) : 0.5;
 
-  console.log(sequenceData, brightnessSum, totalWeight, normalizedBrightness);
-
   return interpolateColorPalette(normalizedBrightness);
 }
 
